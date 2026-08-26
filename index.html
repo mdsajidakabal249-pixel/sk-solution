@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SK Solution — AI Doubt Solver</title>
+<link rel="icon" href="data:,">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --paper:#FAF6EC; --paperCard:#FFFDF8; --navy:#1C2A4A; --navyDeep:#12192E;
+    --indigo:#2E3B63; --marigold:#E8A33D; --marigoldDeep:#C97F1E;
+    --marginRed:#C1443C; --ink:#262A33; --muted:#8A8272; --ruleBlue:#C7D2E8; --danger:#B3453D;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; background:var(--paper); font-family:'Inter',sans-serif;
+    color:var(--ink); display:flex; justify-content:center; padding:28px 16px 60px;
+  }
+  .wrap{width:100%; max-width:480px;}
+  textarea:focus, button:focus-visible{outline:2px solid var(--marigoldDeep); outline-offset:2px;}
+  @keyframes fadeSlideUp{from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+  @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(193,68,60,0.35);} 70%{box-shadow:0 0 0 12px rgba(193,68,60,0);} 100%{box-shadow:0 0 0 0 rgba(193,68,60,0);}}
+  @keyframes stampIn{0%{opacity:0; transform:scale(1.6) rotate(-14deg);} 60%{opacity:1; transform:scale(0.92) rotate(-8deg);} 100%{opacity:1; transform:scale(1) rotate(-8deg);}}
+  @keyframes dotBounce{0%,80%,100%{transform:translateY(0);} 40%{transform:translateY(-6px);}}
+  .fade-up{animation:fadeSlideUp 0.5s ease both;}
+  .fade-in{animation:fadeIn 0.4s ease both;}
+  .press{transition:transform .12s ease, box-shadow .12s ease; cursor:pointer;}
+  .press:active{transform:scale(0.97);}
+  @media (prefers-reduced-motion:reduce){.fade-up,.fade-in{animation:none !important;}}
+
+  .header{text-align:center; margin-bottom:22px;}
+  .badge{
+    width:56px; height:56px; margin:0 auto 14px; border-radius:50%;
+    background:linear-gradient(155deg, var(--navy), var(--navyDeep));
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 4px var(--paper), 0 0 0 6px var(--marigold), 0 10px 22px -8px rgba(28,42,74,0.5);
+  }
+  .badge span{font-family:'Fraunces',serif; font-weight:700; font-size:20px; color:#F6EFDF;}
+  h1{font-family:'Fraunces',serif; font-weight:700; font-size:30px; color:var(--navy); margin:0; line-height:1.1;}
+  .eyebrow-top{font-size:11.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--marigoldDeep); margin-top:6px;}
+  .tagline{font-family:'Fraunces',serif; font-style:italic; font-size:15px; color:var(--muted); margin-top:8px;}
+
+  .card{
+    position:relative; background:var(--paperCard); border-radius:20px;
+    box-shadow:0 1px 2px rgba(28,42,74,.06), 0 12px 28px -12px rgba(28,42,74,.18);
+    border:1px solid #EFE6D6; overflow:hidden;
+  }
+  .card .rules{position:absolute; inset:0; background-image:repeating-linear-gradient(var(--ruleBlue) 0 1px, transparent 1px 34px); background-position:0 54px; opacity:.55; pointer-events:none;}
+  .card .margin{position:absolute; top:0; bottom:0; left:34px; width:2px; background:var(--marginRed); opacity:.55; pointer-events:none;}
+  .card-inner{position:relative; padding:22px 20px 22px 46px;}
+
+  .eyebrow{font-family:'Inter',sans-serif; font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+
+  textarea{
+    width:100%; resize:vertical; border:1.5px solid #E6DCC6; border-radius:14px; padding:14px;
+    font-family:'Inter',sans-serif; font-size:15px; color:var(--ink); background:#FFFEFB; line-height:1.55;
+  }
+
+  .img-preview{display:flex; align-items:center; gap:12px; margin-top:12px; background:#FFF9EC; border:1px solid #F0DFB8; border-radius:12px; padding:8px;}
+  .img-preview img{width:52px; height:52px; object-fit:cover; border-radius:8px;}
+  .img-preview .label{font-size:13px; color:var(--muted); flex:1;}
+  .img-preview button{border:none; background:transparent; color:var(--marginRed); font-size:13px; font-weight:700; padding:6px 8px;}
+
+  .row{display:flex; gap:10px; margin-top:14px;}
+  .btn-secondary{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:13px 10px;
+    border-radius:14px; border:1.5px solid #E6DCC6; background:#FFFEFB; color:var(--navy);
+    font-weight:600; font-size:13.5px;
+  }
+  .btn-secondary.listening{border-color:var(--marginRed); background:#FDEDEC; color:var(--marginRed); animation:pulseRing 1.4s infinite;}
+  .btn-secondary[disabled]{opacity:.45; cursor:not-allowed;}
+
+  .error-text{margin-top:12px; font-size:13px; color:var(--danger);}
+
+  .btn-ask{
+    width:100%; margin-top:18px; padding:16px; border-radius:16px; border:none;
+    background:linear-gradient(155deg, var(--marigold), var(--marigoldDeep)); color:#2B1B04;
+    font-weight:700; font-size:16px; box-shadow:0 10px 24px -10px rgba(201,127,30,.6);
+  }
+  .btn-ask[disabled]{background:#E9E2D1; color:var(--muted); box-shadow:none; cursor:not-allowed;}
+
+  .loading{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:22px; color:var(--navy); font-size:14px; font-weight:600;}
+  .dots{display:inline-flex; gap:3px;}
+  .dots span{width:5px; height:5px; border-radius:50%; background:var(--marigoldDeep); display:inline-block; animation:dotBounce 1s infinite;}
+  .dots span:nth-child(2){animation-delay:.15s;}
+  .dots span:nth-child(3){animation-delay:.3s;}
+
+  .subject-badge{display:inline-block; font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--indigo); background:#EDF0F8; border:1px solid #D8DFF0; border-radius:999px; padding:5px 12px; margin-bottom:10px;}
+
+  .stamp{position:absolute; top:-6px; right:-6px; width:34px; height:34px; border-radius:50%; border:2px solid var(--marginRed); color:var(--marginRed); display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:800; animation:stampIn .5s ease .15s both;}
+
+  p.answer{margin:0 0 20px; font-size:15px; line-height:1.7; color:var(--ink); white-space:pre-wrap;}
+  p.example{margin:0 0 20px; font-size:14.5px; line-height:1.7; color:var(--ink); white-space:pre-wrap; font-family:'IBM Plex Mono',monospace; background:#F7F4EC; border:1px solid #EDE4CE; border-radius:10px; padding:12px 14px;}
+  p.practice{margin:0; font-size:14.5px; line-height:1.65; color:var(--ink); font-style:italic;}
+
+  .actions{display:flex; gap:10px; margin-top:16px;}
+  .btn-outline{flex:1; padding:14px; border-radius:14px; border:1.5px solid var(--navy); background:transparent; color:var(--navy); font-weight:700; font-size:14.5px;}
+  .btn-dark{flex:1; padding:14px; border-radius:14px; border:none; background:linear-gradient(155deg, var(--navy), var(--navyDeep)); color:#F6EFDF; font-weight:700; font-size:14.5px;}
+
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header fade-up">
+    <div class="badge"><span>SK</span></div>
+    <h1>SK Solution</h1>
+    <div class="eyebrow-top">AI Doubt Solver</div>
+    <div class="tagline">"Ask Your Doubt. Understand Better."</div>
+  </div>
+
+  <!-- INPUT SCREEN -->
+  <div id="inputScreen">
+    <div class="card fade-up">
+      <div class="rules"></div>
+      <div class="margin"></div>
+      <div class="card-inner">
+        <div class="eyebrow" style="color:var(--navy)">Apna doubt poochiye</div>
+        <p style="margin:0 0 16px; font-size:14.5px; color:var(--ink); line-height:1.6;">
+          Apna question type karein, voice se poochein, ya question ki photo upload karein.
+        </p>
+
+        <textarea id="questionInput" rows="5" placeholder="Apna question yahan type karein..."></textarea>
+
+        <div id="imgPreviewWrap" class="img-preview hidden fade-in">
+          <img id="imgPreview" src="" alt="Uploaded question" />
+          <div class="label">Photo attached</div>
+          <button id="removeImgBtn" class="press">Remove</button>
+        </div>
+
+        <div class="row">
+          <button id="voiceBtn" class="btn-secondary press">🎤 <span id="voiceLabel">Ask by Voice</span></button>
+          <button id="photoBtn" class="btn-secondary press">📷 Upload Photo</button>
+          <input id="fileInput" type="file" accept="image/*" style="display:none" />
+        </div>
+
+        <div id="errorText" class="error-text hidden"></div>
+
+        <button id="askBtn" class="btn-ask press" disabled>✨ Ask AI</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loadingScreen" class="loading hidden fade-in">
+    <span>SK Solution soch raha hai</span>
+    <span class="dots"><span></span><span></span><span></span></span>
+  </div>
+
+  <!-- RESULT SCREEN -->
+  <div id="resultScreen" class="hidden fade-up">
+    <div id="subjectBadge" class="subject-badge hidden"></div>
+
+    <div class="card">
+      <div class="rules"></div>
+      <div class="margin"></div>
+      <div class="card-inner">
+
+        <div id="clarifyBlock" class="hidden">
+          <div class="eyebrow" style="color:var(--marginRed)">Thoda aur bataiye</div>
+          <p id="clarifyMsg" style="margin:0; font-size:15px; line-height:1.65; color:var(--ink);"></p>
+        </div>
+
+        <div id="answerBlock" class="hidden">
+          <div style="position:relative;">
+            <span class="stamp">✓</span>
+          </div>
+          <div class="eyebrow" style="color:var(--marigoldDeep)">💡 Answer</div>
+          <p id="answerText" class="answer"></p>
+
+          <div id="exampleWrap">
+            <div class="eyebrow" style="color:var(--indigo)">📌 Example</div>
+            <p id="exampleText" class="example"></p>
+          </div>
+
+          <div id="practiceWrap">
+            <div class="eyebrow" style="color:var(--marginRed)">📝 Practice Question</div>
+            <p id="practiceText" class="practice"></p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="editBtn" class="btn-outline press hidden">Edit Question</button>
+      <button id="anotherBtn" class="btn-dark press">🔄 Ask Another Question</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const questionInput = document.getElementById('questionInput');
+  const askBtn = document.getElementById('askBtn');
+  const voiceBtn = document.getElementById('voiceBtn');
+  const voiceLabel = document.getElementById('voiceLabel');
+  const photoBtn = document.getElementById('photoBtn');
+  const fileInput = document.getElementById('fileInput');
+  const imgPreviewWrap = document.getElementById('imgPreviewWrap');
+  const imgPreview = document.getElementById('imgPreview');
+  const removeImgBtn = document.getElementById('removeImgBtn');
+  const errorText = document.getElementById('errorText');
+
+  const inputScreen = document.getElementById('inputScreen');
+  const loadingScreen = document.getElementById('loadingScreen');
+  const resultScreen = document.getElementById('resultScreen');
+
+  const subjectBadge = document.getElementById('subjectBadge');
+  const clarifyBlock = document.getElementById('clarifyBlock');
+  const clarifyMsg = document.getElementById('clarifyMsg');
+  const answerBlock = document.getElementById('answerBlock');
+  const answerText = document.getElementById('answerText');
+  const exampleWrap = document.getElementById('exampleWrap');
+  const exampleText = document.getElementById('exampleText');
+  const practiceWrap = document.getElementById('practiceWrap');
+  const practiceText = document.getElementById('practiceText');
+  const editBtn = document.getElementById('editBtn');
+  const anotherBtn = document.getElementById('anotherBtn');
+
+  let image = null; // {dataUrl, base64, mimeType}
+  let listening = false;
+  let recognition = null;
+  let baseText = "";
+
+  function showError(msg){
+    errorText.textContent = msg;
+    errorText.classList.remove('hidden');
+  }
+  function clearError(){
+    errorText.classList.add('hidden');
+    errorText.textContent = "";
+  }
+
+  function updateAskEnabled(){
+    const has = questionInput.value.trim().length > 0 || !!image;
+    askBtn.disabled = !has;
+  }
+  questionInput.addEventListener('input', updateAskEnabled);
+
+  // ---- Speech recognition ----
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    voiceBtn.disabled = true;
+  } else {
+    recognition = new SR();
+    recognition.lang = 'hi-IN';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      listening = true;
+      voiceBtn.classList.add('listening');
+      voiceLabel.textContent = 'Sun raha hoon...';
+    };
+    recognition.onend = () => {
+      listening = false;
+      voiceBtn.classList.remove('listening');
+      voiceLabel.textContent = 'Ask by Voice';
+    };
+    recognition.onerror = () => {
+      listening = false;
+      voiceBtn.classList.remove('listening');
+      voiceLabel.textContent = 'Ask by Voice';
+      showError('Voice sun nahi paye. Dobara try karein ya type karein.');
+    };
+    recognition.onresult = (e) => {
+      let final = '', interim = '';
+      for (let i=0; i<e.results.length; i++){
+        if (e.results[i].isFinal) final += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      questionInput.value = (baseText + ' ' + final + interim).trim();
+      updateAskEnabled();
+    };
+  }
+
+  voiceBtn.addEventListener('click', () => {
+    clearError();
+    if (!recognition) return;
+    if (listening) {
+      recognition.stop();
+    } else {
+      baseText = questionInput.value;
+      try { recognition.start(); } catch(e) {}
+    }
+  });
+
+  // ---- Photo upload ----
+  photoBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    clearError();
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const base64 = dataUrl.split(',')[1];
+      image = { dataUrl, base64, mimeType: file.type || 'image/jpeg' };
+      imgPreview.src = dataUrl;
+      imgPreviewWrap.classList.remove('hidden');
+      updateAskEnabled();
+    };
+    reader.readAsDataURL(file);
+    fileInput.value = '';
+  });
+  removeImgBtn.addEventListener('click', () => {
+    image = null;
+    imgPreviewWrap.classList.add('hidden');
+    updateAskEnabled();
+  });
+
+  // ---- Ask AI ----
+  async function askAI(){
+    clearError();
+    loadingScreen.classList.remove('hidden');
+    inputScreen.classList.add('hidden');
+    askBtn.disabled = true;
+
+    try {
+      const body = { question: questionInput.value };
+      if (image) body.image = { data: image.base64, mimeType: image.mimeType };
+
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Kuch dikkat aa gayi.');
+      }
+      renderResult(data);
+    } catch (err) {
+      inputScreen.classList.remove('hidden');
+      showError(err.message || 'Kuch technical dikkat aa gayi. Dobara try karein.');
+      updateAskEnabled();
+    } finally {
+      loadingScreen.classList.add('hidden');
+    }
+  }
+  askBtn.addEventListener('click', askAI);
+
+  function renderResult(result){
+    resultScreen.classList.remove('hidden');
+
+    if (result.clarify) {
+      subjectBadge.classList.add('hidden');
+      clarifyBlock.classList.remove('hidden');
+      answerBlock.classList.add('hidden');
+      clarifyMsg.textContent = result.clarify_message || 'Yeh question thoda unclear hai, thoda aur detail bata sakte hain?';
+      editBtn.classList.remove('hidden');
+    } else {
+      clarifyBlock.classList.add('hidden');
+      answerBlock.classList.remove('hidden');
+      editBtn.classList.add('hidden');
+
+      if (result.subject) {
+        subjectBadge.textContent = result.subject;
+        subjectBadge.classList.remove('hidden');
+      } else {
+        subjectBadge.classList.add('hidden');
+      }
+
+      answerText.textContent = result.answer || '';
+
+      if (result.example) {
+        exampleText.textContent = result.example;
+        exampleWrap.classList.remove('hidden');
+      } else {
+        exampleWrap.classList.add('hidden');
+      }
+
+      if (result.practice_question) {
+        practiceText.textContent = result.practice_question;
+        practiceWrap.classList.remove('hidden');
+      } else {
+        practiceWrap.classList.add('hidden');
+      }
+    }
+  }
+
+  function resetToInput(){
+    resultScreen.classList.add('hidden');
+    inputScreen.classList.remove('hidden');
+    questionInput.value = '';
+    image = null;
+    imgPreviewWrap.classList.add('hidden');
+    clearError();
+    updateAskEnabled();
+    questionInput.focus();
+  }
+
+  anotherBtn.addEventListener('click', resetToInput);
+  editBtn.addEventListener('click', () => {
+    resultScreen.classList.add('hidden');
+    inputScreen.classList.remove('hidden');
+    questionInput.focus();
+  });
+
+})();
+</script>
+</body>
+</html>
